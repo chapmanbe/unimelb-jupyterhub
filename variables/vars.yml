@@ -20,9 +20,9 @@ volume_region: "Melbourne"
 # group).
 attach_volumes: true
 # The number of gigabytes each attached volume should be.
-volume_size_gb: "10"
+volume_size_gb: "20"
 # The number of instances to attach volumes to.
-volume_instances: 47
+volume_instances: 4
 # The name of the security group (this just needs to be consistent, no
 # convention is required)
 security_group_name: "JupyterHub-sg"
@@ -39,7 +39,7 @@ security_rule_interface_port_https_negotiation: "443"
 # systems)
 instance_availability_zone: "melbourne-qh2-uom"
 # The number of instances to spin up on nectar.
-instance_count: 47
+instance_count: 4
 # The prefix for instance names (part preceding instance number).
 instance_name_prefix: "JupyterHub-"
 # The suffix for instance names.
@@ -67,8 +67,8 @@ image_user: ubuntu
 # Set the name of the key pair you have registered in the NeCTAR dashboard.
 # Reuse the same key pair because it allows us to ssh in after the machine has
 # been created.
-instance_key_pair_name: "comp20008-jupyterhub-kp"
-# =============================================================================
+instance_key_pair_name: "isys90069jupyterhub"
+# ============i=================================================================
 # The provider for the network, you may need to change this based on what
 # visibility you want to have for students.
 instance_network: "Classic Provider"
@@ -211,25 +211,25 @@ ldap_template: "uid={{ '{' }}username{{ '}' }},ou=people,o={{ ldap_organisation 
 # so if you need further customisation, it shouldn't be too hard to jump in.
 # NOTE: You can add other admins easily later from any account you make, so
 # don't fret too much about adding everyone at once.
-jupyterhub_admins: "['gfitzpatrick']"
+jupyterhub_admins: "['bcchap']"
 # List of users who can create assignments.
 jupyterhub_assignment_admins: "{{ jupyterhub_admins }}"
 # Image to use for jupyterhub notebooks.
-jupyter_notebook_image: "gradyfitz/comp20003-jupyter-c-kernel"
+jupyter_notebook_image: "chapmanbe/isys90069_jupyter"
 # Image tag for image to use for jupyterhub notebooks. If you're using your own
 # managed/produced image, latest will probably be fine, otherwise pick a
 # specific tag from the release
-jupyter_notebook_tag: "user"
+jupyter_notebook_tag: "latest"
 # The image to use for all users who can create assignments.
-jupyter_admin_notebook_tag: "admin"
+jupyter_admin_notebook_tag: "latest"
 # The url of the JupyterHub server.
 #jupyter_hub_nb_address: "comp20003-jh.eng.unimelb.edu.aurepo=&urlpath=lab%2Ftree%2Fcomp20003-notebooks%2F"
 # The url to the notebook repository.
-notebook_pull_repo: "https://github.com/gradyfitz/comp20008-notebooks"
+notebook_pull_repo: "chapmanbe/isys90069_2020_exploration"
 # The branch to pull from.
 notebook_pull_branch: "master"
 # The foler to synchronise notebooks to.
-notebook_pull_destination: "workshops"
+notebook_pull_destination: "work"
 
 # ============================================================================
 # JupyterHub helper settings.

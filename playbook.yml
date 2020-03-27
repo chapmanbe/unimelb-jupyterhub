@@ -170,7 +170,7 @@
       # Make end +1 also to ensure we never have to count backwards (Ansible
       # doesn't like you asking it to do that).
       with_sequence: start={{ volume_instances + 1 }} end={{ instance_count + 1 }}
-      when: attach_volumes and item <= instance_count
+      when: attach_volumes and item | int <= instance_count
 
     # Creates the instance with required properties (without volumes).
     - name: Create all instances without attached volume.
