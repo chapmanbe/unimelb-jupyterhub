@@ -225,7 +225,7 @@ jupyter_admin_notebook_tag: "latest"
 # The url of the JupyterHub server.
 #jupyter_hub_nb_address: "comp20003-jh.eng.unimelb.edu.aurepo=&urlpath=lab%2Ftree%2Fcomp20003-notebooks%2F"
 # The url to the notebook repository.
-notebook_pull_repo: "chapmanbe/isys90069_2020_exploration"
+notebook_pull_repo: "https://github.com/chapmanbe/isys90069_2020_exploration"
 # The branch to pull from.
 notebook_pull_branch: "master"
 # The foler to synchronise notebooks to.
