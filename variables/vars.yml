@@ -219,9 +219,9 @@ jupyter_notebook_image: "chapmanbe/isys90069_jupyter"
 # Image tag for image to use for jupyterhub notebooks. If you're using your own
 # managed/produced image, latest will probably be fine, otherwise pick a
 # specific tag from the release
-jupyter_notebook_tag: "latest"
+jupyter_notebook_tag: "0.1.1"
 # The image to use for all users who can create assignments.
-jupyter_admin_notebook_tag: "latest"
+jupyter_admin_notebook_tag: "0.1.1"
 # The url of the JupyterHub server.
 #jupyter_hub_nb_address: "comp20003-jh.eng.unimelb.edu.aurepo=&urlpath=lab%2Ftree%2Fcomp20003-notebooks%2F"
 # The url to the notebook repository.
