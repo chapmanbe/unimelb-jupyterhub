@@ -165,7 +165,7 @@ docker_version: "docker-ce=18.06.3~ce~3-0~ubuntu"
 #   sudo su -
 #   helm search jupyterhub
 # To find the actual version which is present and use that instead.
-jupyterhub_version: "0.8.2"
+jupyterhub_version: "0.9.0"
 
 # =============================================================================
 # The namespace for resources to be allocated in by Kubernetes for JupyterHub
@@ -186,7 +186,7 @@ user_cpu_limit: "1.0"
 # CPUs, so the limit of the system on 64 VCPUs at 0.125 is 512 students.
 user_cpu_guarantee: "0.75"
 # Memory usage limit (optimistic, upper end), similar to the above.
-user_memory_limit: "4G"
+user_memory_limit: "3G"
 # Memory usage limit (lower end), similar to above. Note also that swap is
 # turned off, so this is a hard limit.
 user_memory_guarantee: "2G"
@@ -219,9 +219,9 @@ jupyter_notebook_image: "chapmanbe/isys90069_jupyter"
 # Image tag for image to use for jupyterhub notebooks. If you're using your own
 # managed/produced image, latest will probably be fine, otherwise pick a
 # specific tag from the release
-jupyter_notebook_tag: "0.1.1"
+jupyter_notebook_tag: "latest"
 # The image to use for all users who can create assignments.
-jupyter_admin_notebook_tag: "0.1.1"
+jupyter_admin_notebook_tag: "latest"
 # The url of the JupyterHub server.
 #jupyter_hub_nb_address: "comp20003-jh.eng.unimelb.edu.aurepo=&urlpath=lab%2Ftree%2Fcomp20003-notebooks%2F"
 # The url to the notebook repository.
