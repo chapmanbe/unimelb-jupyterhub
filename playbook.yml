@@ -584,12 +584,14 @@
         removes: /etc/kubernetes/manifests/etcd.yaml
 
     - name: Initialise control-plane node with kubeadm
+      become_user: root
+      become: yes
       # Calico requires that we pass --pod-network-cidr=192.168.0.0/16 during
       # init.
       command: kubeadm init --pod-network-cidr=192.168.0.0/16
       args:
         # We only run this command once, it creates a number of files, but
-        # checking one should suffice.
+        # checking once should suffice.
         creates: /etc/kubernetes/manifests/etcd.yaml
       become: yes
 
@@ -723,6 +725,8 @@
         mode: "777"
 
     - name: Join to kubeadm network
+      become_user: root
+      become: yes
       command: sh ./kube_join_command.token
       args:
         creates: ./joined_kube_already
@@ -768,6 +772,8 @@
       become: yes
 
     - name: Initialise helm and tiller
+      become_user: root
+      become: yes
       command: helm init --service-account tiller --wait
       args:
         creates: ./helm_initialised
