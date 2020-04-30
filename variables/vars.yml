@@ -86,7 +86,7 @@ local_pv_directory: "shared"
 # this is fine, but if you have stacks of storage, you can just put it on the
 # persistent volume instead). If this is set to false,
 # ephemeral_volume_share_directory is used.
-use_ephemeral_database: True
+use_ephemeral_database: False
 # Use ephemeral volume for docker data (recommended if OS storage is small).
 use_ephemeral_docker: False
 # Use ephemeral volume for kubelet (recommended if OS storage is small).
