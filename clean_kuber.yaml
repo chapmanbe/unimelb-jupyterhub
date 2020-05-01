@@ -82,6 +82,10 @@
         - kube_join_command.token
         - calico.yaml 
         - kubeadm_initialised
+        - rook_ceph_setup
+        - helm_installed
+        - rook_helm_installed
+
 
     - name: Remove $HOME/.kube
       file:
@@ -92,3 +96,23 @@
       file:
         path: /var/lib/etcd
         state: absent
+    - name: Remove /mnt/cephdisk/ceph
+      become_user: root
+      become: yes
+      file:
+        path: /mnt/cephdisk/ceph
+        state: absent
+    - name: Remove ceph cluster data
+      become_user: root
+      become: yes
+      file:
+        path: /mnt/cephdisk/data
+        state: absent
+
+    - name: Remove helm
+      become_user: root
+      become: yes
+      file:
+        path: /usr/local/bin/helm
+        state: absent
+

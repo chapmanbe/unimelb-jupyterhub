@@ -724,7 +724,7 @@
         dest: ./
         mode: "777"
 
-    - name: Join to kubeadm network
+    - name: Join the kubeadm network
       become_user: root
       become: yes
       command: sh ./kube_join_command.token
@@ -754,81 +754,6 @@
         path: ./helm_installed
         state: touch
 
-- name: Set up helm on master node
-  hosts: jupyterhub_head_node
-  become_user: root
-  vars_files: variables/vars.yml
-  tasks:
-    - name: Create service account for tiller
-      command: kubectl --namespace kube-system create serviceaccount tiller
-      args:
-        creates: ./helm_initialised
-      become: yes
-
-    - name: Give service account for tiller permissions to manage cluster
-      command: kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
-      args:
-        creates: ./helm_initialised
-      become: yes
-
-    - name: Initialise helm and tiller
-      become_user: root
-      become: yes
-      command: helm init --service-account tiller --wait
-      args:
-        creates: ./helm_initialised
-      become: yes
-
-    - name: Mark Helm initialised
-      file:
-        path: ./helm_initialised
-        state: touch
-
-- name: Set up helm clients on other nodes
-  hosts: jupyterhub_nodes:!jupyterhub_head_node
-  become_user: root
-  vars_files: variables/vars.yml
-  tasks:
-    - name: Initialise Helm for clients
-      command: helm init --client-only
-      args:
-        creates: ./helm_initialised
-      become: yes
-
-    - name: Mark Helm initialised
-      file:
-        path: ./helm_initialised
-        state: touch
-
-- name: Secure helm on the master node
-  hosts: jupyterhub_head_node
-  become_user: root
-  vars_files: variables/vars.yml
-  tasks:
-    - name: Apply patch to limit where tiller listens
-      command: "kubectl patch deployment tiller-deploy --namespace=kube-system --type=json --patch='[{\"op\": \"add\", \"path\": \"/spec/template/spec/containers/0/command\", \"value\": [\"/tiller\", \"--listen=127.0.0.1:44134\"]}]'"
-      args:
-        creates: ./helm_secured
-      become: yes
-
-    - name: Apply patch to limit where tiller listens
-      command: "kubectl patch deployment tiller-deploy --namespace=kube-system --type=json --patch='[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/command\", \"value\": [\"/tiller\", \"--listen=127.0.0.1:44134\"]}]'"
-      args:
-        creates: ./helm_secured
-      become: yes
-
-    - name: Wait for tiller pod to come up
-      shell: kubectl get pods --namespace kube-system -o json
-      register: kubectl_get_pods
-      until: kubectl_get_pods.stdout|from_json|json_query('items[*].status.phase')|unique == ["Running"]
-      delay: 30
-      retries: 10
-      become: yes
-
-    - name: Mark that helm is secured
-      file:
-        path: ./helm_secured
-        state: touch
 
 - name: Set up Persistent Volume Claims on master node
   hosts: jupyterhub_head_node
