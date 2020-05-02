@@ -281,6 +281,7 @@
         name: systemd-timesyncd.service
         state: restarted
 
+
     - name: Set up environment on all hosts
       lineinfile:
         path: /etc/environment
@@ -318,61 +319,11 @@
     # Can't resize online volume if the source and destination size are the same
     # it seems, might be a way to get around this, but I don't need to do that
     # and it's probably easier to resize using an additional playbook later.
-    - name: Create filesystem for all volumes
-      filesystem:
-        dev: "/dev/{{ pv_dev['stdout_lines'][0] }}"
-        fstype: "{{ mount_filesystem_type }}"
-      loop: "{{ groups['jupyterhub_storage_nodes'] }}"
-      when: attach_volumes and item == hostvars[inventory_hostname]['ansible_default_ipv4']['address']
+    #- name: Prepare disks for ceph
+    #  command: ceph-disk prepare "/dev/{{ pv_dev['stdout_lines'][0] }}" --fs-type "{{ mount_filesystem_type }}"
+    #  loop: "{{ groups['jupyterhub_storage_nodes'] }}"
+    #  when: attach_volumes and item == hostvars[inventory_hostname]['ansible_default_ipv4']['address']
 
-    # Note: This is done whether we have volumes attached or not.
-    - name: Create directory to mount (NFS)
-      file:
-        path: "{{ volume_mount_directory }}"
-        state: directory
-      when: install_nfs
-
-    - name: Create directory to mount (Ceph)
-      file:
-        path: "{{ ceph_data_path }}"
-        state: directory
-      when: install_ceph
-
-    - name: Mount volume directory (NFS)
-      mount:
-        path: "{{ volume_mount_directory }}"
-        src: "/dev/{{ pv_dev['stdout_lines'][0] }}"
-        state: mounted
-        fstype: "{{ mount_filesystem_type }}"
-      loop: "{{ groups['jupyterhub_storage_nodes'] }}"
-      when: attach_volumes and item == hostvars[inventory_hostname]['ansible_default_ipv4']['address'] and install_nfs
-
-    - name: Mount volume directory (Ceph)
-      mount:
-        path: "{{ ceph_data_path }}"
-        src: "/dev/{{ pv_dev['stdout_lines'][0] }}"
-        state: mounted
-        fstype: "{{ mount_filesystem_type }}"
-      loop: "{{ groups['jupyterhub_storage_nodes'] }}"
-      when: attach_volumes and item == hostvars[inventory_hostname]['ansible_default_ipv4']['address'] and install_ceph
-
-    - name: Give all permissions to volumes (NFS)
-      become: yes
-      file:
-        path: "{{ volume_mount_directory }}"
-        # Might want to restrict this more, but go wild for now.
-        mode: 777
-      loop: "{{ groups['jupyterhub_storage_nodes'] }}"
-      when: attach_volumes and item == hostvars[inventory_hostname]['ansible_default_ipv4']['address'] and install_nfs
-
-    - name: Give all permissions to volumes (Ceph)
-      become: yes
-      file:
-        path: "{{ ceph_data_path }}"
-        # Might want to restrict this more, but go wild for now.
-        mode: 777
-      loop: "{{ groups['jupyterhub_storage_nodes'] }}"
-      when: attach_volumes and item == hostvars[inventory_hostname]['ansible_default_ipv4']['address'] and install_ceph
 
 - name: Install required software on all nodes
   hosts: jupyterhub_nodes
@@ -395,18 +346,6 @@
       apt:
         state: present
         name: python3-pip
-
-    - name: Install NFS server
-      apt:
-        state: present
-        name: nfs-kernel-server
-      # when: install_nfs
-
-    - name: Install NFS client
-      apt:
-        state: present
-        name: nfs-common
-      # when: install_nfs
 
     # Required for ceph, doesn't really hurt to have it otherwise either.
     - name: Install lvm2
@@ -476,100 +415,6 @@
         name: kubelet
         state: restarted
 
-- name: Set up storage on all hosts
-  hosts: jupyterhub_nodes
-  become_user: root
-  become: yes
-  vars_files: variables/vars.yml
-  tasks:
-    - name: Create directory for NFS share
-      file:
-        path: "{{ volume_mount_directory }}/{{ local_pv_directory }}/"
-        state: directory
-        mode: "777"
-        owner: "nobody"
-        group: "nogroup"
-      when: install_nfs
-
-    - name: Allow all jupyterhub nodes to access shared files.
-      lineinfile:
-        path: /etc/exports
-        create: yes
-        line: "{{ volume_mount_directory }}/{{ local_pv_directory }}/ {{ item }}(rw,sync,no_subtree_check)"
-        mode: "777"
-        state: present
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: install_nfs
-
-    - name: Create directory for ephemeral NFS share
-      file:
-        path: "{{ ephemeral_volume_share_directory }}"
-        state: directory
-        mode: "777"
-        owner: "nobody"
-        group: "nogroup"
-      when: install_nfs
-
-    - name: Allow all jupyterhub nodes to access ephemeral shared files.
-      lineinfile:
-        path: /etc/exports
-        create: yes
-        line: "{{ ephemeral_volume_share_directory }} {{ item }}(rw,sync,no_subtree_check)"
-        mode: "777"
-        state: present
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: install_nfs
-
-    - name: Allow all jupyterhub nodes to access shared ephemeral folders.
-      lineinfile:
-        path: /etc/exports
-        create: yes
-        line: "{{ volume_mount_directory }}/{{ local_pv_directory }}/ {{ item }}(rw,sync,no_subtree_check)"
-        mode: "777"
-        state: present
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: install_nfs
-
-    - name: Export filesystem
-      command: exportfs -a
-      become: yes
-      when: install_nfs
-
-    - name: Restart NFS server
-      systemd:
-        daemon_reload: yes
-        name: nfs-kernel-server
-        state: restarted
-      when: install_nfs
-
-    - name: Create directories for all NFS shares
-      file:
-        path: "{{ nfs_share_directory_prefix }}{{ item }}{{ nfs_share_directory_suffix }}"
-        state: directory
-        mode: "777"
-        owner: "nobody"
-        group: "nogroup"
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: install_nfs
-
-    - name: Create directories for all ephemeral NFS shares
-      file:
-        path: "{{ nfs_ephemeral_share_directory_prefix }}{{ item }}{{ nfs_ephemeral_share_directory_suffix }}"
-        state: directory
-        mode: "777"
-        owner: "nobody"
-        group: "nogroup"
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: install_nfs
-
-    - name: Mount NFS shares
-      mount:
-        path: "{{ nfs_share_directory_prefix }}{{ item }}{{ nfs_share_directory_suffix }}"
-        src: "{{ item }}:{{ volume_mount_directory }}/{{ local_pv_directory }}/"
-        state: mounted
-        fstype: nfs
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: install_nfs
 
 - name: Set up cluster control-plane
   hosts: jupyterhub_head_node
@@ -657,7 +502,8 @@
         path: ./chownkube.sh
         state: absent
     # --------------------------------------------------------------------------
-
+     # I couldn't get these tains to work on the system 
+     #
     - name: Allow nodes to be scheduled on the control-plane machine
       command: kubectl taint nodes --all node-role.kubernetes.io/master-
       args:
@@ -866,35 +712,6 @@
         creates: "./rook_ceph_setup"
       when: install_ceph
 
-    # NFS setup.
-    - name: Create kubernetes pods for all nfs volumes
-      command: "helm install --name= --set nfs.server={{ item }} --set nfs.path={{ volume_mount_directory }}/{{ local_pv_directory }} --set storageClass.name=nfs-client-{{ item | replace('.','-') }} stable/nfs-client-provisioner"
-      args:
-        creates: "./{{ item }}-pv-provisioned"
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: install_nfs
-
-    - name: Mark pods made
-      command: "touch ./{{ item }}-pv-provisioned"
-      args:
-        creates: "./{{ item }}-pv-provisioned"
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: install_nfs
-
-    - name: Create kubernetes pods for all ephemeral nfs volumes in default namespace
-      command: "helm install --set nfs.server={{ item }} --set nfs.path={{ ephemeral_volume_share_directory }} --set storageClass.name=eph-nfs-client-{{ item | replace('.','-') }} stable/nfs-client-provisioner"
-      args:
-        creates: "./eph-{{ item }}-pv-provisioned"
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: ephemeral_persistent_storage and install_nfs
-
-    - name: Mark pods made
-      command: "touch ./eph-{{ item }}-pv-provisioned"
-      args:
-        creates: "./eph-{{ item }}-pv-provisioned"
-      loop: "{{ groups['jupyterhub_nodes'] }}"
-      when: ephemeral_persistent_storage and install_nfs
-
 
 - name: Set up JupyterHub on the master node
   hosts: jupyterhub_head_node
@@ -912,14 +729,6 @@
       args:
         creates: ./config.yml
       register: random_hub_secret
-
-    - name: Add claim info for shared jupyterhub data (NFS)
-      template:
-        dest: ./jupyter-shared-config.yml
-        src: roles/files/jupyter-shared-config.yml
-        mode: "777"
-      become: yes
-      when: install_nfs
 
     - name: Add claim info for shared jupyterhub data (Ceph)
       template:
