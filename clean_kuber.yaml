@@ -56,6 +56,7 @@
   become: yes
   vars_files: variables/vars.yml
   tasks:
+    
     - name: reset kubeadm
       command: kubeadm reset -f
     - name: Purge kubernetes from system
@@ -86,7 +87,6 @@
         - helm_installed
         - rook_helm_installed
 
-
     - name: Remove $HOME/.kube
       file:
         path: "$HOME/.kube/"
@@ -96,18 +96,6 @@
       file:
         path: /var/lib/etcd
         state: absent
-    - name: Remove /mnt/cephdisk/ceph
-      become_user: root
-      become: yes
-      file:
-        path: /mnt/cephdisk/ceph
-        state: absent
-    - name: Remove ceph cluster data
-      become_user: root
-      become: yes
-      file:
-        path: /mnt/cephdisk/data
-        state: absent
 
     - name: Remove helm
       become_user: root
@@ -116,3 +104,30 @@
         path: /usr/local/bin/helm
         state: absent
 
+    # # # # # - name: Ansible delete file wildcard
+    # # # # #   find:
+    # # # #     paths: /mnt/cephdisk/ceph
+    # # # #     patterns: "*"
+    # # # #   register: wildcard_files_to_delete
+    # # # #
+    # # # - name: Ansible remove file wildcard
+    # # #   file:
+    # # #     path: "{{ item.path }}"
+    # # #     state: absent
+    # # #   with_items: "{{ wildcard_files_to_delete.files }}"
+    # # #
+    # # - name: Unmount /dev/vdb
+    # #   become_user: root
+    # #   become: yes
+    # #   mount:
+    # #     src: /dev/vdb
+    # #     path: /mnt/cephdisk/ceph
+    # #     state: absent
+    # #     
+    # - name: Wipfs /dev/vdb
+    #   become_user: root
+    #   become: yes
+    #   command: wipefs -a /dev/vdb
+    #
+    #
+    #
