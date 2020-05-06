@@ -1,19 +1,21 @@
 ---
-# This script provisions machines and deploys JupyterHub on them, as well as
-# setting up a network file system mirrored across all instances.
-#
-# Note that this script does a few things which are simple rather than using
-#   statuses to get definitive results. This was done in the interest of making
-#   better use of time allotted, mainly creating and checking files instead of
-#   running commands to check statuses. Most of these can probably be simply
-#   replaced without an immense amount of hassle, but the script should set up
-#   the system anyway, so there shouldn't be any harm done by leaving it as it
-#   is.
-#
-#
-# Need this to work out IP addresses of all nodes to run on, any other
-# method will suffice.
-#
+ # This script provisions machines and deploys JupyterHub on them, as well as
+ # setting up a network file system mirrored across all instances.
+
+ # Note that this script does a few things which are simple rather than using
+ #   statuses to get definitive results. This was done in the interest of making
+ #   better use of time allotted, mainly creating and checking files instead of
+ #   running commands to check statuses. Most of these can probably be simply
+ #   replaced without an immense amount of hassle, but the script should set up
+ #   the system anyway, so there shouldn't be any harm done by leaving it as it
+ #   is.
+
+
+ # Need this to work out IP addresses of all nodes to run on, any other
+ # method will suffice.
+
+
+
 - name: Check OpenStack image facts for personal project.
   hosts: localhost
   vars_files:
@@ -59,6 +61,7 @@
     
     - name: reset kubeadm
       command: kubeadm reset -f
+      ignore_errors: yes
     - name: Purge kubernetes from system
       apt:
         state: absent
@@ -69,6 +72,7 @@
         - kubectl
         - kubeadm
         - kubernetes-cni
+     
     - name: Remove /etc/kubernetes
       file:
         path: /etc/kubernetes/
@@ -104,30 +108,54 @@
         path: /usr/local/bin/helm
         state: absent
 
-    # # # # # - name: Ansible delete file wildcard
-    # # # # #   find:
-    # # # #     paths: /mnt/cephdisk/ceph
-    # # # #     patterns: "*"
-    # # # #   register: wildcard_files_to_delete
+    - name: Ansible delete file wildcard
+      find:
+         paths: /mnt/cephdisk/ceph
+         file_type: any
+         patterns: "*"
+      register: wildcard_files_to_delete
     # # # #
-    # # # - name: Ansible remove file wildcard
-    # # #   file:
-    # # #     path: "{{ item.path }}"
-    # # #     state: absent
-    # # #   with_items: "{{ wildcard_files_to_delete.files }}"
+    - name: Ansible remove file wildcard
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ wildcard_files_to_delete.files }}"
     # # #
-    # # - name: Unmount /dev/vdb
-    # #   become_user: root
-    # #   become: yes
-    # #   mount:
-    # #     src: /dev/vdb
-    # #     path: /mnt/cephdisk/ceph
-    # #     state: absent
+    - name: Unmount /dev/vdb
+      become_user: root
+      become: yes
+      mount:
+        src: /dev/vdb
+        path: /mnt/cephdisk/ceph
+        state: absent
+
+    - name: Ansible delete file wildcard
+      find:
+         paths: /mnt/cephdisk/data
+         file_type: any
+         patterns: "*"
+      register: wildcard_files_to_delete
+    # # # #
+    - name: Ansible remove file wildcard
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ wildcard_files_to_delete.files }}"
+    # # #
+    - name: Unmount /dev/vdb
+      become_user: root
+      become: yes
+      mount:
+        src: /dev/vdb
+        path: /mnt/cephdisk/ceph
+        state: absent
+
     # #     
-    # - name: Wipfs /dev/vdb
-    #   become_user: root
-    #   become: yes
-    #   command: wipefs -a /dev/vdb
+    - name: Wipfs /dev/vdb
+      become_user: root
+      become: yes
+      command: dd if=/dev/zero of=/dev/vdb bs=4096 status=progress
+      ignore_errors: yes
     #
     #
     #

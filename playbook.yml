@@ -669,13 +669,13 @@
         src: roles/files/ceph-storageclass.yml
         mode: "777"
       become: yes
-      when: install_ceph and not ceph_use_shared_fs
+      #      when: install_ceph and not ceph_use_shared_fs
 
     - name: Create Ceph storage type.
       command: "kubectl create -f ceph-storageclass.yml"
       args:
         creates: "./rook_ceph_setup"
-      when: install_ceph and not ceph_use_shared_fs
+        #when: install_ceph and not ceph_use_shared_fs
 
     # Add storage class (Block).
     - name: Template Ceph storage file system.
@@ -684,13 +684,13 @@
         src: roles/files/ceph-filesystem.yml
         mode: "777"
       become: yes
-      when: install_ceph and ceph_use_shared_fs
+      #when: install_ceph and ceph_use_shared_fs
 
     - name: Create Ceph storage file system.
       command: "kubectl create -f ceph-filesystem.yml"
       args:
         creates: "./rook_ceph_setup"
-      when: install_ceph and ceph_use_shared_fs
+        #when: install_ceph and ceph_use_shared_fs
 
     - name: Template Ceph storage type (Shared FS).
       template:
@@ -698,13 +698,13 @@
         src: roles/files/ceph-storageclass-sfs.yml
         mode: "777"
       become: yes
-      when: install_ceph and ceph_use_shared_fs
+      #when: install_ceph and ceph_use_shared_fs
 
     - name: Create Ceph storage type (Shared FS).
       command: "kubectl create -f ceph-storageclass-sfs.yml"
       args:
         creates: "./rook_ceph_setup"
-      when: install_ceph and ceph_use_shared_fs
+        #when: install_ceph and ceph_use_shared_fs
 
     - name: Mark Ceph setup.
       command: "touch ./rook_ceph_setup"
