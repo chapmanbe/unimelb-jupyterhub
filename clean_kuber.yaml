@@ -72,6 +72,8 @@
         - kubectl
         - kubeadm
         - kubernetes-cni
+        - lvm2
+        - "{{ docker_version }}"
      
     - name: Remove /etc/kubernetes
       file:
@@ -90,6 +92,18 @@
         - rook_ceph_setup
         - helm_installed
         - rook_helm_installed
+    - name: Ansible delete yaml files
+      find:
+         paths: /home/ubuntu
+         file_type: any
+         patterns: "*.yml"
+      register: wildcard_files_to_delete
+    # # # #
+    - name: Ansible remove file wildcard
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ wildcard_files_to_delete.files }}"
 
     - name: Remove $HOME/.kube
       file:
@@ -101,61 +115,16 @@
         path: /var/lib/etcd
         state: absent
 
-    - name: Remove helm
-      become_user: root
-      become: yes
-      file:
-        path: /usr/local/bin/helm
-        state: absent
-
-    - name: Ansible delete file wildcard
+    - name: Ansible identify docker files
       find:
-         paths: /mnt/cephdisk/ceph
+         paths: /mnt/dockerd/
          file_type: any
          patterns: "*"
       register: wildcard_files_to_delete
     # # # #
-    - name: Ansible remove file wildcard
+    - name: Ansible remove docker files
       file:
         path: "{{ item.path }}"
         state: absent
       with_items: "{{ wildcard_files_to_delete.files }}"
-    # # #
-    - name: Unmount /dev/vdb
-      become_user: root
-      become: yes
-      mount:
-        src: /dev/vdb
-        path: /mnt/cephdisk/ceph
-        state: absent
 
-    - name: Ansible delete file wildcard
-      find:
-         paths: /mnt/cephdisk/data
-         file_type: any
-         patterns: "*"
-      register: wildcard_files_to_delete
-    # # # #
-    - name: Ansible remove file wildcard
-      file:
-        path: "{{ item.path }}"
-        state: absent
-      with_items: "{{ wildcard_files_to_delete.files }}"
-    # # #
-    - name: Unmount /dev/vdb
-      become_user: root
-      become: yes
-      mount:
-        src: /dev/vdb
-        path: /mnt/cephdisk/ceph
-        state: absent
-
-    # #     
-    - name: Wipfs /dev/vdb
-      become_user: root
-      become: yes
-      command: dd if=/dev/zero of=/dev/vdb bs=4096 status=progress
-      ignore_errors: yes
-    #
-    #
-    #

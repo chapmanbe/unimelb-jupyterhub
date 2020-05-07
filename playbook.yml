@@ -18,26 +18,6 @@
   # - host_vars/nectar.yaml # Use the variables retrieved from open stack
                            # information.
   tasks:
-    - name: Create volumes
-      os_volume:
-        api_timeout: 50 # Seconds(?)
-        auth:
-          auth_url: "{{ cloud_auth_url }}"
-          username: "{{ cloud_username }}"
-          password: "{{ cloud_password }}"
-          project_name: "{{ cloud_project_name }}"
-        display_name: "{{ volume_name_prefix }}{{ item }}{{ volume_name_suffix }}"
-        display_description: "Disk #{{ item }}, created through ansible"
-        availability_zone: "{{ volume_availability_zone }}" # Marked in docs as
-                                                            # for backwards
-                                                            # compatibility, but
-                                                            # required by NeCTAR
-        region_name: "{{ volume_region }}"
-        size: "{{ volume_size_gb }}" # in GB
-        state: present
-        wait: yes # Wait until volume created
-      with_sequence: start=1 end={{ volume_instances }}
-      when: attach_volumes
 
     - name: Create security group
       os_security_group:
@@ -124,76 +104,6 @@
         state: present
 
     # Creates the instance with required properties.
-    - name: Create instances with attached volume.
-      os_server:
-        api_timeout: 3600 # Seconds(?)
-        timeout: 600
-        auth:
-          auth_url: "{{ cloud_auth_url }}"
-          username: "{{ cloud_username }}"
-          password: "{{ cloud_password }}"
-          project_name: "{{ cloud_project_name }}"
-        availability_zone: "{{ instance_availability_zone }}"
-        flavor: "{{ instance_flavour }}"
-        image: "{{ instance_image }}"
-        key_name: "{{ instance_key_pair_name }}"
-        name: "{{ instance_name_prefix }}{{ item }}{{ instance_name_suffix }}"
-        network: "{{ instance_network }}"
-        region_name: "{{ instance_region }}"
-        security_groups: "{{ instance_security_groups }}"
-        volumes:
-          - "{{ volume_name_prefix }}{{ item }}{{ volume_name_suffix }}"
-        state: present
-        wait: yes # Wait up to timeout seconds until instance created
-      with_sequence: start=1 end={{ volume_instances }}
-      when: attach_volumes
-
-    - name: Create instances without attached volume.
-      os_server:
-        api_timeout: 3600 # Seconds(?)
-        timeout: 600
-        auth:
-          auth_url: "{{ cloud_auth_url }}"
-          username: "{{ cloud_username }}"
-          password: "{{ cloud_password }}"
-          project_name: "{{ cloud_project_name }}"
-        availability_zone: "{{ instance_availability_zone }}"
-        flavor: "{{ instance_flavour }}"
-        image: "{{ instance_image }}"
-        key_name: "{{ instance_key_pair_name }}"
-        name: "{{ instance_name_prefix }}{{ item }}{{ instance_name_suffix }}"
-        network: "{{ instance_network }}"
-        region_name: "{{ instance_region }}"
-        security_groups: "{{ instance_security_groups }}"
-        state: present
-        wait: yes # Wait up to timeout seconds until instance created
-      # Make end +1 also to ensure we never have to count backwards (Ansible
-      # doesn't like you asking it to do that).
-      with_sequence: start={{ volume_instances + 1 }} end={{ instance_count + 1 }}
-      when: attach_volumes and item | int <= instance_count
-
-    # Creates the instance with required properties (without volumes).
-    - name: Create all instances without attached volume.
-      os_server:
-        api_timeout: 3600 # Seconds(?)
-        timeout: 3600
-        auth:
-          auth_url: "{{ cloud_auth_url }}"
-          username: "{{ cloud_username }}"
-          password: "{{ cloud_password }}"
-          project_name: "{{ cloud_project_name }}"
-        availability_zone: "{{ instance_availability_zone }}"
-        flavor: "{{ instance_flavour }}"
-        image: "{{ instance_image }}"
-        key_name: "{{ instance_key_pair_name }}"
-        name: "{{ instance_name_prefix }}{{ item }}{{ instance_name_suffix }}"
-        network: "{{ instance_network }}"
-        region_name: "{{ instance_region }}"
-        security_groups: "{{ instance_security_groups }}"
-        state: present
-        wait: yes # Wait up to timeout seconds until instance created
-      with_sequence: start=1 end={{ instance_count }}
-      when: not attach_volumes
 
     # Need this to work out IP addresses of all nodes to run on, any other
     # method will suffice.
@@ -364,28 +274,19 @@
         src: roles/files/daemon.json
         dest: /etc/docker/daemon.json
 
-    - name: Create folder for docker systemd configuration
+    - name: Create docker.root.conf
       file:
-        path: /etc/systemd/system/docker.service.d
-        state: directory
-
-    # Note: I haven't tested this in the script.
-    - name: Shift Docker to ephemeral disk
-      lineinfile:
         path: /etc/systemd/system/docker.service.d/docker.root.conf
-        line: "{{ item }}"
         state: directory
-      loop:
-        - [Service]
-        - ExecStart=
-        - ExecStart=/usr/bin/dockerd -g /mnt/dockerd -H fd://
-      when: use_ephemeral_docker
 
     - name: Restart docker
       systemd:
         daemon_reload: yes
         name: docker
         state: restarted
+    - name: check health before continuing
+      pause:
+        prompt: "Check cluster health"
 
     - name: Install gpg key for Google
       apt_key:
@@ -504,12 +405,17 @@
     # --------------------------------------------------------------------------
      # I couldn't get these tains to work on the system 
      #
+
     - name: Allow nodes to be scheduled on the control-plane machine
       command: kubectl taint nodes --all node-role.kubernetes.io/master-
       args:
         creates: ./kubeadm_initialised
       become: yes
       when: not untainted_control_node
+
+    - name: check health before continuing
+      pause:
+        prompt: "Check cluster health"
 
     - name: Allow nodes to be scheduled on the control-plane machine
       command: kubectl taint nodes --all node.kubernetes.io/not-ready-
@@ -542,6 +448,10 @@
       delay: 30
       retries: 10
       become: yes
+
+    - name: check health before continuing
+      pause:
+        prompt: "Check cluster health"
 
     # Use this because we might be joining additional nodes to the cluster.
     - name: Generate new token

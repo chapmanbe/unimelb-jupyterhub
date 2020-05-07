@@ -18,7 +18,7 @@ volume_region: "Melbourne"
 # to add a node to use for storage (I've tried to keep this as unobtrusive as
 # possible, you should be able to simply add a host to the jupyterhub storage
 # group).
-attach_volumes: true
+attach_volumes: False
 # The number of gigabytes each attached volume should be.
 volume_size_gb: "20"
 # The number of instances to attach volumes to.
@@ -88,31 +88,26 @@ local_pv_directory: "shared"
 # ephemeral_volume_share_directory is used.
 use_ephemeral_database: False
 # Use ephemeral volume for docker data (recommended if OS storage is small).
-use_ephemeral_docker: False
+use_ephemeral_docker: True
 # Use ephemeral volume for kubelet (recommended if OS storage is small).
 use_ephemeral_kubelet: False
 # The location of the ephemeral device (should be already formatted).
 # NOTE: This device may be different for the flavour you use, this is hard-coded
 # as some images have multiple ephemeral block devices, and for the flavour
 # we're using, this is the middle device.
-ephemeral_volume: "/dev/vda"
+docker_volume: "/dev/vdb"
 # Directory to share from the ephemeral volume. I assume the disk is already
 # mounted because it is in my image. I also make this a subdirectory rather than
 # the straight mountpoint as in my case the persistent volume is mounted inside
 # the ephemeral volume.
-ephemeral_volume_share_directory: "/mnt/pv2/shared"
+docker_volume_mnt: "/mnt/dockerd"
 # Add ephemeral storage to the storage classes for user data. Not so safe, but
 # if you're like us and have 2TB of ephemeral storage, it may be an attractive
 # option.
 # TODO: Actually implement this -> Add lines to storage classes list.
 ephemeral_persistent_storage: False
-# ============================ Storage Handling ==============================
-# This option uses NFS as the storage protocol, only one of NFS & Ceph should
-# be used.
-install_nfs: False
-# This option uses Ceph as the storage protocol using Rook. This is the
-# recommended option, though it involves additional storage.
 install_ceph: True
+install_nfs: False
 # =========================== Ceph Settings ==================================
 ceph_data_path: "/mnt/cephdisk/ceph"
 ceph_cluster_data: "/mnt/cephdisk/data"
@@ -132,16 +127,6 @@ ceph_shared_fs_name: "myfs"
 # Can be arbitrary as far as I know.
 ceph_volume_pool: "myfs-data0"
 ceph_shared_fs_storage_name: "csi-cephfs"
-
-# ============================================================================
-# This variable determines where the nfs shares will be located, they will take
-# the form
-# {{ nfs_share_directory_prefix }}{{ Machine IP }}{{ nfs_share_directory_suffix }}
-nfs_share_directory_prefix: "/mnt/"
-nfs_share_directory_suffix: "/"
-# Similar to above, but for the ephemeral partitions used for the database.
-nfs_ephemeral_share_directory_prefix: "/mnt/eph-"
-nfs_ephemeral_share_directory_suffix: "/"
 
 # =============================================================================
 # This variable determines whether to allow non-management Kubernetes pods
@@ -191,7 +176,7 @@ user_memory_limit: "3G"
 # turned off, so this is a hard limit.
 user_memory_guarantee: "2G"
 # Limit for disk space for a single user.
-user_storage_limit: "1Gi"
+user_storage_limit: "2Gi"
 
 # ============================================================================
 # This is the address of the LDAP server to use.
