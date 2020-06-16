@@ -20,6 +20,6 @@ spec:
     enabled: true
   storage:
     useAllNodes: true
-    deviceFilter: vd[b-d]
+    deviceFilter: vdc
     directories:
       - path: {{ ceph_cluster_data }}

@@ -38,6 +38,28 @@
         wait: yes # Wait until volume created
       with_sequence: start=1 end={{ volume_instances }}
       when: attach_volumes
+      
+
+    - name: Create ceph volumes
+      os_volume:
+        api_timeout: 50 # Seconds(?)
+        auth:
+          auth_url: "{{ cloud_auth_url }}"
+          username: "{{ cloud_username }}"
+          password: "{{ cloud_password }}"
+          project_name: "{{ cloud_project_name }}"
+        display_name: "ceph_{{ volume_name_prefix }}{{ item }}{{ ceph_volume_name_suffix }}"
+        display_description: "Ceph Disk #{{ item }}, created through ansible"
+        availability_zone: "{{ volume_availability_zone }}" # Marked in docs as
+                                                            # for backwards
+                                                            # compatibility, but
+                                                            # required by NeCTAR
+        region_name: "{{ volume_region }}"
+        size: "{{ ceph_volume_size_gb }}" # in GB
+        state: present
+        wait: yes # Wait until volume created
+      with_sequence: start=1 end={{ volume_instances }}
+      when: attach_volumes
 
     - name: Create security group
       os_security_group:
@@ -143,6 +165,7 @@
         security_groups: "{{ instance_security_groups }}"
         volumes:
           - "{{ volume_name_prefix }}{{ item }}{{ volume_name_suffix }}"
+          - "ceph_{{ volume_name_prefix }}{{ item }}{{ ceph_volume_name_suffix }}"
         state: present
         wait: yes # Wait up to timeout seconds until instance created
       with_sequence: start=1 end={{ volume_instances }}
@@ -208,12 +231,15 @@
         server: "{{ instance_name_prefix }}*"
         wait: yes
 
+
     # Uses above facts to set up list of all nodes to run on.
     - name: Add compute hosts to in-memory inventory
       add_host:
         groups: jupyterhub_nodes
         name: "{{ item['accessIPv4'] }}"
       loop: "{{ openstack_servers }}"
+
+
 
     # This node is arbitrary, but can handle anything where a single origin node
     # is required to manage system setup correctly.
@@ -303,6 +329,8 @@
         - "https_proxy=\"http://wwwproxy.unimelb.edu.au:8000\""
         - "ftp_proxy=\"http://wwwproxy.unimelb.edu.au:8000\""
         - "no_proxy=\"localhost,127.0.0.1,{{ inventory_hostname }},192.168.0.0/16,10.96.0.0/12,{{ groups['jupyterhub_nodes'] | join(',') }}\""
+        - "alias krc='kubectl -n rook-ceph'"
+        - "alias ks='kubectl -n kube-system'"
 
     # Assume disk to mount is final disk in block devices.
     - name: Get disk to mount
@@ -315,6 +343,13 @@
         state: present
         update_cache: yes
         name: xfsprogs
+
+    - name: Add Docker Mount Points
+      mount:
+        path: /mnt/dockerd
+        src : /dev/vdb
+        fstype: xfs
+        state: present
 
     # Can't resize online volume if the source and destination size are the same
     # it seems, might be a way to get around this, but I don't need to do that
@@ -358,10 +393,15 @@
     - name: Turn off swap for all devices
       shell: swapoff -a
 
+    - name: Stop docker
+      systemd:
+        name: docker
+        state: stopped
+
     # Key here is that we switch from cgroupsfs to systemd as warned by kubeadm.
     - name: Set up docker configuration
       copy:
-        src: roles/files/daemon.json
+        src: roles/files/daemon.json.mnt
         dest: /etc/docker/daemon.json
 
     - name: Create folder for docker systemd configuration
@@ -369,23 +409,21 @@
         path: /etc/systemd/system/docker.service.d
         state: directory
 
-    # Note: I haven't tested this in the script.
-    - name: Shift Docker to ephemeral disk
-      lineinfile:
-        path: /etc/systemd/system/docker.service.d/docker.root.conf
-        line: "{{ item }}"
-        state: directory
-      loop:
-        - [Service]
-        - ExecStart=
-        - ExecStart=/usr/bin/dockerd -g /mnt/dockerd -H fd://
-      when: use_ephemeral_docker
+    - name: Synchronize two directories on one remote host.
+      synchronize:
+        src: /var/lib/docker
+        dest: /mnt/dockerd
+      delegate_to: "{{ inventory_hostname }}"
+
+    - name: Remove old docker folder
+      file:
+        path: /var/lib/docker
+        state: absent
 
     - name: Restart docker
       systemd:
-        daemon_reload: yes
         name: docker
-        state: restarted
+        state: started
 
     - name: Install gpg key for Google
       apt_key:
@@ -408,6 +446,8 @@
         - kubelet
         - kubectl
         - kubeadm
+        - vim
+        - tree
 
     - name: Restart kubelet
       systemd:

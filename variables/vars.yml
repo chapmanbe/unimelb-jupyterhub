@@ -21,6 +21,8 @@ volume_region: "Melbourne"
 attach_volumes: true
 # The number of gigabytes each attached volume should be.
 volume_size_gb: "20"
+ceph_volume_size_gb: "40"
+
 # The number of instances to attach volumes to.
 volume_instances: 4
 # The name of the security group (this just needs to be consistent, no
@@ -50,6 +52,8 @@ instance_name_suffix: "-compute"
 volume_name_prefix: "JupyterHub-"
 # The suffix for volume names.
 volume_name_suffix: "-volume"
+ceph_volume_name_suffix: "-volume"
+
 # =============================================================================
 # The kind of compute instance to spin up (this will depend on what you have
 # allocated to use, so you may need to change it).
@@ -133,15 +137,6 @@ ceph_shared_fs_name: "myfs"
 ceph_volume_pool: "myfs-data0"
 ceph_shared_fs_storage_name: "csi-cephfs"
 
-# ============================================================================
-# This variable determines where the nfs shares will be located, they will take
-# the form
-# {{ nfs_share_directory_prefix }}{{ Machine IP }}{{ nfs_share_directory_suffix }}
-nfs_share_directory_prefix: "/mnt/"
-nfs_share_directory_suffix: "/"
-# Similar to above, but for the ephemeral partitions used for the database.
-nfs_ephemeral_share_directory_prefix: "/mnt/eph-"
-nfs_ephemeral_share_directory_suffix: "/"
 
 # =============================================================================
 # This variable determines whether to allow non-management Kubernetes pods

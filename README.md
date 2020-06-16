@@ -168,7 +168,7 @@ ExecStart=/usr/bin/dockerd -g /mnt/dockerd -H fd://
 then run
 ```
 sudo systemctl daemon-reload
-sudo systemctl restart docker
+sudo SYSTEMCTL RESTART DOCKER
 ```
 - Move the kubelet directory to the ephemeral disk. To do so, add
 the following to /etc/default/kubelet
