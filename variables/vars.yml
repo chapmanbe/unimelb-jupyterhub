@@ -21,13 +21,13 @@ volume_region: "Melbourne"
 attach_volumes: true
 # The number of gigabytes each attached volume should be.
 volume_size_gb: "20"
-ceph_volume_size_gb: "40"
+ceph_volume_size_gb: "30"
 
 # The number of instances to attach volumes to.
 volume_instances: 4
 # The name of the security group (this just needs to be consistent, no
 # convention is required)
-security_group_name: "JupyterHub-sg"
+security_group_name: "JHub-sg"
 # What port to open for JupyterHub's external interface. This isn't currently
 # configurable, since I leave the LoadBalancer to work out the port at this
 # point.
@@ -43,13 +43,13 @@ instance_availability_zone: "melbourne-qh2-uom"
 # The number of instances to spin up on nectar.
 instance_count: 4
 # The prefix for instance names (part preceding instance number).
-instance_name_prefix: "JupyterHub-"
+instance_name_prefix: "mimic34mdjhub-"
 # The suffix for instance names.
 instance_name_suffix: "-compute"
 # The prefix for volume names (part preceding volume number). Warning: the glob
 # on this is pretty basic, so if you have other instances that match the
 # prefix* pattern, please make it different here.
-volume_name_prefix: "JupyterHub-"
+volume_name_prefix: "mimic34mdjhub-"
 # The suffix for volume names.
 volume_name_suffix: "-volume"
 ceph_volume_name_suffix: "-volume"
@@ -176,17 +176,17 @@ jupyterhub_name: "jupyterhub"
 # 0.5 would mean 128 students can max out their share at once, if less than 128
 # students are using the system, in principle they won't see any degradation in
 # performance.
-user_cpu_limit: "1.0"
+user_cpu_limit: "1.5"
 # CPU usage guarantee (lower end), iirc this won't schedule if you run out of
 # CPUs, so the limit of the system on 64 VCPUs at 0.125 is 512 students.
-user_cpu_guarantee: "0.75"
+user_cpu_guarantee: "1.00"
 # Memory usage limit (optimistic, upper end), similar to the above.
-user_memory_limit: "3G"
+user_memory_limit: "4G"
 # Memory usage limit (lower end), similar to above. Note also that swap is
 # turned off, so this is a hard limit.
 user_memory_guarantee: "2G"
 # Limit for disk space for a single user.
-user_storage_limit: "1Gi"
+user_storage_limit: "2Gi"
 
 # ============================================================================
 # This is the address of the LDAP server to use.
@@ -210,7 +210,7 @@ jupyterhub_admins: "['bcchap']"
 # List of users who can create assignments.
 jupyterhub_assignment_admins: "{{ jupyterhub_admins }}"
 # Image to use for jupyterhub notebooks.
-jupyter_notebook_image: "chapmanbe/isys90069_jupyter"
+jupyter_notebook_image: "chapmanbe/mimic34md_jupyter"
 # Image tag for image to use for jupyterhub notebooks. If you're using your own
 # managed/produced image, latest will probably be fine, otherwise pick a
 # specific tag from the release
@@ -220,7 +220,7 @@ jupyter_admin_notebook_tag: "latest"
 # The url of the JupyterHub server.
 #jupyter_hub_nb_address: "comp20003-jh.eng.unimelb.edu.aurepo=&urlpath=lab%2Ftree%2Fcomp20003-notebooks%2F"
 # The url to the notebook repository.
-notebook_pull_repo: "https://github.com/chapmanbe/isys90069_2020_exploration"
+notebook_pull_repo: "https://github.com/Melbourne-BMDS/mimic34md2020_materials"
 # The branch to pull from.
 notebook_pull_branch: "master"
 # The foler to synchronise notebooks to.

@@ -20,7 +20,7 @@ hub:
 # three lines if you don't want that.
   extraConfig:
     jupyterlab: |
-      c.Spawner.cmd = ['jupyter-labhub']
+      c.Spawner.default_url = "/lab"
 # NOTE: This handles giving different images to different users, if you
 # have more complex rules, you can add them here.
 # Cf. https://github.com/jupyterhub/zero-to-jupyterhub-k8s/issues/1178

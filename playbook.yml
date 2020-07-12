@@ -409,11 +409,15 @@
         path: /etc/systemd/system/docker.service.d
         state: directory
 
+    - name: check if default Docker location exists
+      stat: path=/var/lib/docker
+      register: odocker
     - name: Synchronize two directories on one remote host.
       synchronize:
         src: /var/lib/docker
         dest: /mnt/dockerd
       delegate_to: "{{ inventory_hostname }}"
+      when: odocker.stat.exists
 
     - name: Remove old docker folder
       file:
@@ -627,7 +631,7 @@
       get_url:
         dest: ./helm_install.sh
         mode: "777"
-        url: https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get-helm-3
+        url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
 
     - name: Install Helm
       command: bash ./helm_install.sh
