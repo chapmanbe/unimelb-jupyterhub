@@ -20,7 +20,7 @@ volume_region: "Melbourne"
 # group).
 attach_volumes: true
 # The number of gigabytes each attached volume should be.
-volume_size_gb: "20"
+volume_size_gb: "30"
 ceph_volume_size_gb: "30"
 
 # The number of instances to attach volumes to.
@@ -43,13 +43,13 @@ instance_availability_zone: "melbourne-qh2-uom"
 # The number of instances to spin up on nectar.
 instance_count: 4
 # The prefix for instance names (part preceding instance number).
-instance_name_prefix: "mimic34mdjhub-"
+instance_name_prefix: "postop-"
 # The suffix for instance names.
 instance_name_suffix: "-compute"
 # The prefix for volume names (part preceding volume number). Warning: the glob
 # on this is pretty basic, so if you have other instances that match the
 # prefix* pattern, please make it different here.
-volume_name_prefix: "mimic34mdjhub-"
+volume_name_prefix: "postop-"
 # The suffix for volume names.
 volume_name_suffix: "-volume"
 ceph_volume_name_suffix: "-volume"
@@ -176,17 +176,17 @@ jupyterhub_name: "jupyterhub"
 # 0.5 would mean 128 students can max out their share at once, if less than 128
 # students are using the system, in principle they won't see any degradation in
 # performance.
-user_cpu_limit: "1.5"
+user_cpu_limit: "30"
 # CPU usage guarantee (lower end), iirc this won't schedule if you run out of
 # CPUs, so the limit of the system on 64 VCPUs at 0.125 is 512 students.
-user_cpu_guarantee: "1.00"
+user_cpu_guarantee: "10"
 # Memory usage limit (optimistic, upper end), similar to the above.
-user_memory_limit: "4G"
+user_memory_limit: "48G"
 # Memory usage limit (lower end), similar to above. Note also that swap is
 # turned off, so this is a hard limit.
-user_memory_guarantee: "2G"
+user_memory_guarantee: "12G"
 # Limit for disk space for a single user.
-user_storage_limit: "2Gi"
+user_storage_limit: "20Gi"
 
 # ============================================================================
 # This is the address of the LDAP server to use.

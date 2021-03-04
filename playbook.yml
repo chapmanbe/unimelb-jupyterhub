@@ -221,7 +221,7 @@
     # Need this to work out IP addresses of all nodes to run on, any other
     # method will suffice.
     - name: Get instance facts
-      os_server_facts:
+      openstack.cloud.server_info:
         api_timeout: 50 # Seconds(?)
         auth:
           auth_url: "{{ cloud_auth_url }}"
@@ -230,6 +230,7 @@
           project_name: "{{ cloud_project_name }}"
         server: "{{ instance_name_prefix }}*"
         wait: yes
+      register: result
 
 
     # Uses above facts to set up list of all nodes to run on.
@@ -237,7 +238,7 @@
       add_host:
         groups: jupyterhub_nodes
         name: "{{ item['accessIPv4'] }}"
-      loop: "{{ openstack_servers }}"
+      loop: "{{ result.openstack_servers }}"
 
 
 
@@ -251,14 +252,14 @@
     - name: Elect cluster setup manager node
       add_host:
         groups: jupyterhub_head_node
-        name: "{{ (openstack_servers | first)['accessIPv4'] }}"
+        name: "{{ (result.openstack_servers | first)['accessIPv4'] }}"
 
     # Store all nodes with storage attached.
     - name: Add hosts with storage attached to in-memory inventory
       add_host:
         groups: jupyterhub_storage_nodes
         name: "{{ item['accessIPv4'] }}"
-      loop: "{{ openstack_servers }}"
+      loop: "{{ result.openstack_servers }}"
       when: (item['properties']['os-extended-volumes:volumes_attached'] | length) > 0
 
     # NOTE: known-hosts module is not idempotent either, so simple shell script
@@ -268,7 +269,7 @@
     # Trust all the newly created servers.
     - name: Add fingerprints to known hosts file
       shell: "ssh-keyscan -H {{ item['accessIPv4'] }} >> ~/.ssh/known_hosts"
-      loop: "{{ openstack_servers }}"
+      loop: "{{ result.openstack_servers }}"
 
 - name: Wait for all machines to become ready
   hosts: all
